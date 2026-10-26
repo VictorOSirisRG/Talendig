@@ -1,0 +1,33 @@
+services:
+  rabbitmq:
+    image: rabbitmq:4-management
+    ports: ["5672:5672", "15672:15672"]
+
+  db-pedidos:            # MongoDB solo para pedidos
+    image: mongo:7
+
+  db-productos:          # SQL Server solo para productos
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "TuPassword123!"
+
+  pedidos-service:
+    build: ./pedidos-service
+    ports: ["3001:3001"]
+    environment:
+      PORT: 3001
+      MONGO_URI: mongodb://db-pedidos:27017/pedidos
+      RABBIT_URL: amqp://rabbitmq
+    depends_on: [db-pedidos, rabbitmq]
+
+  productos-service:
+    build: ./productos-service
+    ports: ["3002:3002"]
+    environment:
+      PORT: 3002
+      SQL_SERVER: db-productos
+      SQL_USER: sa
+      SQL_PASSWORD: "TuPassword123!"
+      RABBIT_URL: amqp://rabbitmq
+    depends_on: [db-productos, rabbitmq]
